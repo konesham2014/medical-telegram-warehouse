@@ -1,0 +1,152 @@
+version: 2
+
+models:
+  - name: stg_telegram_messages
+    description: "Cleaned and standardized Telegram messages from raw data"
+    columns:
+      - name: message_id
+        description: "Unique identifier for each message"
+        tests:
+          - unique
+          - not_null
+      - name: channel_name
+        description: "Standardized channel name"
+        tests:
+          - not_null
+      - name: message_date
+        description: "Timestamp of the message"
+        tests:
+          - not_null
+      - name: view_count
+        description: "Number of views"
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+      - name: forward_count
+        description: "Number of forwards"
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+      - name: message_length
+        description: "Length of message text"
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+
+  - name: dim_channels
+    description: "Dimension table containing channel attributes and statistics"
+    columns:
+      - name: channel_key
+        description: "Surrogate key for channels"
+        tests:
+          - unique
+          - not_null
+      - name: channel_name
+        description: "Name of the Telegram channel"
+        tests:
+          - unique
+          - not_null
+      - name: channel_type
+        description: "Classification of channel (Pharmaceutical/Cosmetics/Medical)"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['Pharmaceutical', 'Cosmetics', 'Medical']
+      - name: total_posts
+        description: "Total number of posts in the channel"
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+      - name: avg_views
+        description: "Average views per post"
+        tests:
+          - not_null
+
+  - name: dim_dates
+    description: "Date dimension table for time-based analysis"
+    columns:
+      - name: date_key
+        description: "Surrogate key in YYYYMMDD format"
+        tests:
+          - unique
+          - not_null
+      - name: full_date
+        description: "Calendar date"
+        tests:
+          - unique
+          - not_null
+      - name: year
+        description: "Calendar year"
+        tests:
+          - not_null
+      - name: month
+        description: "Calendar month (1-12)"
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ">= 1 AND <= 12"
+
+  - name: fct_messages
+    description: "Fact table containing message metrics and foreign keys"
+    columns:
+      - name: message_id
+        description: "Unique message identifier"
+        tests:
+          - unique
+          - not_null
+      - name: channel_key
+        description: "Foreign key to dim_channels"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_channels')
+              field: channel_key
+      - name: date_key
+        description: "Foreign key to dim_dates"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_dates')
+              field: date_key
+      - name: view_count
+        description: "Number of views"
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+      - name: forward_count
+        description: "Number of forwards"
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+
+  - name: fct_image_detections
+    description: "Fact table containing YOLO object detection results"
+    columns:
+      - name: detection_id
+        description: "Unique identifier for each detection"
+        tests:
+          - unique
+          - not_null
+      - name: message_id
+        description: "Foreign key to messages"
+        tests:
+          - not_null
+      - name: channel_key
+        description: "Foreign key to dim_channels"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_channels')
+              field: channel_key
+      - name: confidence_score
+        description: "YOLO confidence score"
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ">= 0 AND <= 1"

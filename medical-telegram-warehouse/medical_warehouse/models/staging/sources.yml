@@ -1,0 +1,50 @@
+version: 2
+
+sources:
+  - name: raw
+    description: "Raw data loaded from Telegram scraping pipeline"
+    schema: raw
+    tables:
+      - name: telegram_messages
+        description: "Raw Telegram messages scraped from medical channels"
+        columns:
+          - name: message_id
+            description: "Unique identifier for each Telegram message"
+          - name: channel_name
+            description: "Name of the Telegram channel"
+          - name: message_date
+            description: "Timestamp when the message was posted"
+          - name: message_text
+            description: "Full text content of the message"
+          - name: views
+            description: "Number of views on the message"
+          - name: forwards
+            description: "Number of times the message was forwarded"
+          - name: has_media
+            description: "Whether the message contains media"
+          - name: image_path
+            description: "Path to downloaded image if applicable"
+
+  - name: staging
+    description: "Staging data including YOLO detection results"
+    schema: staging
+    tables:
+      - name: yolo_detections
+        description: "YOLO object detection results for images"
+        columns:
+          - name: detection_id
+            description: "Unique identifier for each detection"
+          - name: message_id
+            description: "Reference to original message"
+          - name: channel_name
+            description: "Channel where image was found"
+          - name: detected_class
+            description: "Class detected by YOLO"
+          - name: confidence_score
+            description: "YOLO confidence score (0-1)"
+          - name: image_category
+            description: "Classification: promotional, product_display, lifestyle, other"
+          - name: has_person
+            description: "Whether a person was detected"
+          - name: has_product
+            description: "Whether a product was detected"
